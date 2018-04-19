@@ -80,8 +80,13 @@ static void CPU_CACHE_Enable(void);
  * @param  None
  * @retval None
  */
-
-volatile int push = 0;
+typedef enum {
+	OPEN,
+	SECURING,
+	SECURED,
+	OPENING
+}states ;
+volatile int state = OPEN;
 volatile int is_on = 0;
 volatile int time = 0;
 int main(void) {
@@ -112,14 +117,9 @@ int main(void) {
 	/* Add your application code here
 	 */
 	BSP_LED_Init(LED_GREEN);
-	__HAL_RCC_TIM2_CLK_ENABLE()
-	;
-	__HAL_RCC_TIM5_CLK_ENABLE()
-	;
-	__HAL_RCC_GPIOA_CLK_ENABLE()
-	;
-	__HAL_RCC_GPIOI_CLK_ENABLE()
-	;
+	__HAL_RCC_TIM2_CLK_ENABLE();
+	__HAL_RCC_GPIOA_CLK_ENABLE();
+
 
 	TimHandle.Instance = TIM2;
 	TimHandle.Init.Period = 1000;
@@ -127,11 +127,6 @@ int main(void) {
 	TimHandle.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
 	TimHandle.Init.CounterMode = TIM_COUNTERMODE_UP;
 
-	TimHandle2.Instance = TIM5;
-	TimHandle2.Init.Period = 400;
-	TimHandle2.Init.Prescaler = 54000;
-	TimHandle2.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
-	TimHandle2.Init.CounterMode = TIM_COUNTERMODE_UP;
 
 	uart_handle.Init.BaudRate = 115200;
 	uart_handle.Init.WordLength = UART_WORDLENGTH_8B;
@@ -145,9 +140,6 @@ int main(void) {
 	HAL_NVIC_SetPriority(TIM2_IRQn, 0x0F, 0x00);
 	HAL_NVIC_EnableIRQ(TIM2_IRQn);
 
-	HAL_NVIC_SetPriority(TIM2_IRQn, 0x0F, 0x00);
-	HAL_NVIC_EnableIRQ(TIM2_IRQn);
-
 	HAL_NVIC_SetPriority(EXTI15_10_IRQn, 0x0F, 0x00);
 	HAL_NVIC_EnableIRQ(EXTI15_10_IRQn);
 
@@ -157,55 +149,53 @@ int main(void) {
 	HAL_TIM_Base_Init(&TimHandle);
 	HAL_TIM_Base_Start_IT(&TimHandle);
 
-	printf("\n**********WELCOME in interrupts WS**********\r\n\n");
+	printf("OPEN\n");
 
 	while (1) {
 	}
 }
 
 void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin) {
-	if (push == 0) {
+	if (state == OPEN) {
 		TimHandle.Init.Period = 500;
-		HAL_TIM_Base_Init(&TimHandle);
-		HAL_TIM_Base_Start_IT(&TimHandle);
-		push = 1;
-		printf("SECURING\n");
+		HAL_TIM_Base_Init (&TimHandle);
+		HAL_TIM_Base_Start_IT (&TimHandle);
+		state = SECURING;
+		printf ("SECURING\n");
 	}
-	else if (push == 2) {
-		printf("OPENING\n");
-			push = 3;
-	} else {
-		push = 0;
+	else if (state == SECURED) {
+		printf ("OPENING\n");
+		state = OPENING;
 	}
 }
 void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
 
-	if (is_on % 2 == 0&& push !=2) {
-		BSP_LED_On(LED_GREEN);
+	if (is_on % 2 == 0&& state !=SECURED) {
+		BSP_LED_On (LED_GREEN);
 		is_on++;
 	} else {
-		BSP_LED_Off(LED_GREEN);
+		BSP_LED_Off (LED_GREEN);
 		is_on++;
 	}
 
-	if(push == 1 && time<10){
+	if(state == SECURING && time<10){
 		time++;
 	}
-	else if(push == 3 && time<10){
+	else if(state == OPENING && time<10){
 		time++;
 		}
-	else if(push == 1){
-		printf("SECURED\n");
+	else if(state == SECURING){
+		printf ("SECURED\n");
 		time=0;
-		push++;
+		state = SECURED;
 			}
-	else if(push == 3){
-			time=0;
+	else if(state == OPENING ){
+			time = 0;
 			TimHandle.Init.Period = 1000;
-			HAL_TIM_Base_Init(&TimHandle);
-			HAL_TIM_Base_Start_IT(&TimHandle);
+			HAL_TIM_Base_Init (&TimHandle);
+			HAL_TIM_Base_Start_IT (&TimHandle);
 			printf("OPEN\n");
-			push=0;
+			state = OPEN;
 				}
 
 
