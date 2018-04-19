@@ -48,17 +48,17 @@ int main() {
 
     strcpy(&Magda.name,"Kovácsné Réti Magdolna");
     strcpy(&Gaben.name,"Turbók Gábor");
-    strcpy(,&Rezso.name,"Rezso Béla");
+    strcpy(&Rezso.name,"Rezso Béla");
     strcpy(&Rozi.name,"Nagy Rozi");
 
     Magda.year_of_birth = 1980;
     Gaben.year_of_birth = 1990;
     Rezso.year_of_birth = 1985;
     Rozi.year_of_birth = 1993;
-    Magda.q = 1;
-    Gaben.q = 1;
-    Rezso.q = 1;
-    Rozi.q = 2;
+    Magda.q = master_degree;
+    Gaben.q = elementary_school;
+    Rezso.q = high_school;
+    Rozi.q =  phd;
 
     person persons[4];
 
@@ -69,7 +69,7 @@ int main() {
 
     person* personpt= &persons;
     printf("%d\n", get_oldest_alive(persons,4));
-    printf("%d\n", get_qualification_count(personpt,4));
+    printf("%d\n", get_qualification_count(personpt,4,phd));
     return 0;
 }
 
@@ -86,7 +86,7 @@ int get_oldest_alive(person persons[],int len)
     return oldest;
 }
 
-int get_qualification_count(person persons[],int len)
+int get_qualification_count(person persons[],int len,qualification quali)
 {
     int cnt = 0;
      for (int i=0; i<len ;i++){
